@@ -6,6 +6,7 @@ import ResetPassword from "../login/resetPassword";
 import AdminListing from "../admin/admin-listing";
 import AdminView from "../admin/admin-view";
 import AddUser from "../admin/addUser";
+import EmployeeView from "../employee/employee-view";
 import {BrowserRouter as Router, Routes, Route, Link} from "react-router-dom";
 
 function Landing() {
@@ -19,6 +20,7 @@ function Landing() {
           <Route path="/admin-listing" exact element={<AdminListing/>} />
           <Route path="/admin-view/:userId" exact element={<AdminView/>} />
           <Route path="/addUser" exact element={<AddUser/>} />
+          <Route path="/employee-view" exact element={<EmployeeView/>} />
         </Routes>
       </Router>
     );

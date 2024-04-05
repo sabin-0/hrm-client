@@ -4,45 +4,67 @@ import { useNavigate } from "react-router-dom";
 import './admin-listing-page.css';
 import { Link } from "react-router-dom";
 
-
-async function getData() {
-
-    let token = localStorage.getItem('token');
-    console.log("token : ", token);
-    
-    const response = await axios.get('http://localhost:2005/users', {
-        "headers" : {
-            "authorization" : `Bearer ${token}`
-        }
-    });
-    
-    return response.data;
-
+async function fetchDataFromAPI(pageNumber, pageSize, keyword) {
+    try {
+        let token = localStorage.getItem('token');
+        const response = await axios.get(`http://localhost:2005/users?page=${pageNumber}&pageSize=${pageSize}&keyword=${encodeURIComponent(keyword)}`, {
+            "headers" : {
+                "authorization" : `Bearer ${token}`
+            }
+        });
+        console.log("API Response:", response.data);
+        return response.data.data;
+    } catch(error) {
+        throw error;
+    }
 }
 
-
 export default function AdminListingPage() {
-
     const [users, setUsers] = useState([]);
-    const [firstname, setFirstname] = useState('');
-    const [lastname, setLastname] = useState('');
-    const [modalVisible, setModalVisible] = useState(false);
-
+    const [currentPage, setCurrentPage] = useState(1);
+    const [totalPages, setTotalPages] = useState(1);
+    const [pageSize, setPageSize] = useState(2);
+    const [keyword, setKeyword] = useState("");
     const navigate = useNavigate();
 
     useEffect(() => {
-        getData().then(parsedData => {
-            setUsers(parsedData.data);
-        }).catch(error => {
-            console.error("Error fetching data: ",error);
-        });
-    }, []);
+        fetchData(currentPage, pageSize);
+    }, [currentPage, pageSize, keyword]);
+
+    const fetchData = async (pageNumber, pageSize,) => {
+        try {
+            const data = await fetchDataFromAPI(pageNumber, pageSize, keyword);
+            console.log("Data from API:", data);
+            setUsers(data.datas);
+            setTotalPages(data.totalPages);
+        } catch (error) {
+            console.error("Error fetching data: ", error);
+        }
+    };
+
+    const handleSearchInputChange = (event) => {
+        setKeyword(event.target.value);
+    };
 
     const handleViewUser = (userId) => {
-        console.log("handle view called");
-        navigate(`/admin-view/${userId}`);
-        
+        navigate(`/admin-view/${userId}`);   
     }
+
+    const handlePageChange = (page) => {
+        setCurrentPage(page);
+    }
+
+    const handleNextPage = () => {
+        if (currentPage < totalPages) {
+            setCurrentPage(currentPage + 1);
+        }
+    };
+
+    const handlePreviousPage = () => {
+        if (currentPage > 1) {
+            setCurrentPage(currentPage - 1);
+        }
+    };
 
     return (
         <>
@@ -60,7 +82,21 @@ export default function AdminListingPage() {
                         Logout
                     </button>
                 </header>
+
+                
+            
                 <main id="admin-main">
+
+                    <div className="search-bar">
+                <input
+                    type="text"
+                    placeholder="Search users..."
+                    value={keyword}
+                    onChange={handleSearchInputChange}
+                />
+                <button onClick={() => fetchData(currentPage, pageSize)}>Search</button>
+             </div>
+
                 <table id="admin-table">
                         <thead>
                             <tr id="admin-tr">
@@ -70,20 +106,34 @@ export default function AdminListingPage() {
                             </tr>
                         </thead>
                         <tbody>
-                            {users.map(user => (
-                                <tr key={user._id}>
-                                    <td>{user.firstname}</td>
-                                    <td>{user.lastname}</td>
-                                    <td>
-                                        
-                                            <button className="btn btn-primary btn-edit" onClick={() => handleViewUser(user._id)}>view</button>
-                                        
-                                    </td>
+                            {users && users.length > 0 ? (
+                                users.map(user => (
+                                    <tr key={user._id}>
+                                        <td>{user.firstname}</td>
+                                        <td>{user.lastname}</td>
+                                        <td>
+                                            <button className="btn btn-primary btn-edit" onClick={() => handleViewUser(user._id)}>View</button>
+                                        </td>
+                                    </tr>
+                                ))
+                            ) : (
+                                <tr>
+                                    <td colSpan="3">No users found</td>
                                 </tr>
-                            ))}
+                            )}
                         </tbody>
                     </table>
                 </main>
+            </div>
+            {/* Pagination section */}
+            <div className="pagination">
+                <button onClick={handlePreviousPage} disabled={currentPage === 1}>Previous</button>
+                {Array.from({ length: totalPages }, (_, index) => index + 1).map((page) => (
+                    <button key={page} onClick={() => handlePageChange(page)}>
+                        {page}
+                    </button>
+                ))}
+                <button onClick={handleNextPage} disabled={currentPage === totalPages}>Next</button>
             </div>
         </>
     );

@@ -138,4 +138,8 @@
   .btn-delete:hover {
     background-color: #d32f2f;
   }
+
+  .pagination {
+    text-align: center;
+  }
   
